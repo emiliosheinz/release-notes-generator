@@ -1,0 +1,29 @@
+{
+  "name": "release-notes-generator",
+  "version": "1.0.0",
+  "description": "A release notes generator to help you in your daily work",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emilioheinz/release-notes-generator.git"
+  },
+  "keywords": [
+    "release",
+    "generator",
+    "notes",
+    "github"
+  ],
+  "author": "emilioheinz",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/emilioheinz/release-notes-generator/issues"
+  },
+  "homepage": "https://github.com/emilioheinz/release-notes-generator#readme",
+  "dependencies": {
+    "axios": "^0.20.0",
+    "prompt": "^1.0.0"
+  }
+}
