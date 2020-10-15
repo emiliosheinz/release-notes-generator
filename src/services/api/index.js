@@ -3,7 +3,7 @@ const axios = require("axios");
 const api = axios.create({
   headers: {
     Accept: ["application/vnd.github.inertia-preview+json"],
-    Authorization: "token d39a6b0c41d5d4288e1087115ccc2f81cf6987cb",
+    Authorization: "token 05fd6de9951366cf8785c26999089d69820cef29",
   },
 });
 
