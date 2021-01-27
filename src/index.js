@@ -3,7 +3,27 @@ const api = require("./services/api/index.js");
 const yargs = require("yargs");
 const { hideBin } = require("yargs/helpers");
 
-const { label, column, projectId, token } = yargs(hideBin(process.argv))
+const { organizationName, projectNumber, token, label, column } = yargs(
+  hideBin(process.argv)
+)
+  .option("organizationName", {
+    alias: "o",
+    type: "string",
+    description: "The name of the organization in which the project is stored.",
+    demandOption: "Please provide a valid organizationName.",
+  })
+  .option("projectNumber", {
+    alias: "p",
+    type: "number",
+    description: "You can find the project number in the URL on Github",
+    demandOption: "Please provide a valid projectNumber.",
+  })
+  .option("token", {
+    alias: "t",
+    type: "string",
+    description: "A personal GitHub token with access to the project.",
+    demandOption: "Please provide a valid Github personal token.",
+  })
   .option("label", {
     alias: "l",
     type: "string",
@@ -13,18 +33,6 @@ const { label, column, projectId, token } = yargs(hideBin(process.argv))
     alias: "c",
     type: "string",
     description: "Column name from where cards will be taken.",
-  })
-  .option("projectId", {
-    alias: "p",
-    type: "string",
-    description: "Project ID in which you have the data stored in.",
-    demandOption: "Please provide a valid projectId.",
-  })
-  .option("token", {
-    alias: "t",
-    type: "string",
-    description: "A personal GitHub token with access to the project.",
-    demandOption: "Please provide a valid Github personal token.",
   }).argv;
 
 const runtimeHeaders = {
@@ -58,8 +66,17 @@ function getCardsInfo(cards) {
 }
 
 async function loadReleaseNotes() {
+  const { data: orgProjects } = await api.get(
+    `https://api.github.com/orgs/${organizationName}/projects`,
+    {
+      headers: runtimeHeaders,
+    }
+  );
+
+  const filteredProject = orgProjects.find((p) => p.number === projectNumber);
+
   const { data: columns } = await api.get(
-    `https://api.github.com/projects/${projectId}/columns`,
+    `https://api.github.com/projects/${filteredProject.id}/columns`,
     {
       headers: runtimeHeaders,
     }
