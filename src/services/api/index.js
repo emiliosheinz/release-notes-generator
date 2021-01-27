@@ -1,10 +1,12 @@
-import axios from "axios";
+const axios = require("axios");
 
 const api = axios.create({
   headers: {
-    Accept: ["application/vnd.github.inertia-preview+json"],
-    Authorization: "token #####",
+    Accept: [
+      "application/vnd.github.inertia-preview+json",
+      "application/vnd.github.v3+json",
+    ],
   },
 });
 
-export default api;
+module.exports = api;

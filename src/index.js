@@ -1,59 +1,78 @@
-import api from "./services/api/index.js";
-import prompt from "prompt";
-import colors from "colors";
+const api = require("./services/api/index.js");
+const yargs = require("yargs");
+const { hideBin } = require("yargs/helpers");
 
-global.option = undefined;
+const { label, column, projectId, token } = yargs(hideBin(process.argv))
+  .option("label", {
+    alias: "l",
+    type: "string",
+    description: "Define label to filter cards",
+  })
+  .option("column", {
+    alias: "c",
+    type: "string",
+    description: "Column name from where cards will be taken.",
+  })
+  .option("projectId", {
+    alias: "p",
+    type: "string",
+    description: "Project ID in which you have the data stored in.",
+    demandOption: "Please provide a valid projectId.",
+  })
+  .option("token", {
+    alias: "t",
+    type: "string",
+    description: "A personal GitHub token with access to the project.",
+    demandOption: "Please provide a valid Github personal token.",
+  }).argv;
 
-const HOMOLOG_NOK = `HOMOLOG NOK`;
-
-async function loadReleaseNotes() {
-  const { data: columns } = await api.get(
-    "https://api.github.com/projects/4070332/columns"
-  );
-
-  const { cards_url } = columns.find((column) => column.name === `DONE`);
-
-  const { data: cards } = await api.get(`${cards_url}?per_page=100`);
-  getCardsInfo(cards);
-}
+const runtimeHeaders = {
+  Authorization: `token ${token}`,
+};
 
 function renderCard({ number, title }) {
-  console.log(`#${number} ${title}`);
+  console.log(`#${number} - ${title}`);
 }
 
 function getCardsInfo(cards) {
-  cards.forEach(async (card) => {
-    const { data } = await api.get(card.content_url);
-    const labels = data.labels.some((e) => e.name === global.option);
-    if (!global.option) {
-      renderCard({ number: data.number, title: data.title });
+  cards.forEach(async (card, i) => {
+    const { data: cardInfo } = await api.get(card.content_url, {
+      headers: runtimeHeaders,
+    });
+
+    if (!label) {
+      renderCard({ number: cardInfo.number, title: cardInfo.title });
       return;
     }
 
-    if (labels) {
-      renderCard({ number: data.number, title: data.title });
+    const hasLabel = cardInfo.labels.some(
+      (e) => e.name.toLowerCase() === label.toLowerCase()
+    );
+
+    if (hasLabel) {
+      renderCard({ number: cardInfo.number, title: cardInfo.title });
       return;
     }
   });
 }
 
-(() => {
-  prompt.start();
-
-  prompt.message = colors.bold("Filtrar por alguma label especifica ? \n");
-
-  prompt.get(
+async function loadReleaseNotes() {
+  const { data: columns } = await api.get(
+    `https://api.github.com/projects/${projectId}/columns`,
     {
-      properties: {
-        option: {
-          description: colors.cyan("Label: "),
-        },
-      },
-    },
-    (err, result) => {
-      global.option = result.option;
-
-      loadReleaseNotes();
+      headers: runtimeHeaders,
     }
   );
-})();
+
+  const filteredColumn = columns.find((col) => col.name === column);
+
+  const { cards_url } = column ? filteredColumn : columns[0];
+
+  const { data: cards } = await api.get(`${cards_url}?per_page=100`, {
+    headers: runtimeHeaders,
+  });
+
+  getCardsInfo(cards);
+}
+
+loadReleaseNotes();

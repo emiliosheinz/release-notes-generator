@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "A release notes generator to help you in your daily work",
   "main": "src/index.js",
-  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -24,10 +23,7 @@
   },
   "homepage": "https://github.com/emilioheinz/release-notes-generator#readme",
   "dependencies": {
-    "axios": "^0.20.0",
-    "prompt": "^1.0.0"
-  },
-  "devDependencies": {
-    "colors": "^1.4.0"
+    "axios": "0.20.0",
+    "yargs": "16.2.0"
   }
 }
