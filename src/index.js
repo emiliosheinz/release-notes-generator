@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const api = require("./services/api/index.js");
 const yargs = require("yargs");
 const { hideBin } = require("yargs/helpers");
