@@ -32,7 +32,7 @@ const runtimeHeaders = {
 };
 
 function renderCard({ number, title }) {
-  console.log(`#${number} - ${title}`);
+  console.log(`#${number} ${title}`);
 }
 
 function getCardsInfo(cards) {
