@@ -6,7 +6,7 @@ A GitHub release notes generator based on your project's cards.
 
 ### Install
 
-We assume that you already have `node v12.20.1` installed.
+We assume that you already have `node v12.20.1` or higher installed.
 
 To install rng just run:
 
