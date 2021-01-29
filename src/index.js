@@ -44,7 +44,7 @@ function renderCard({ number, title }) {
 }
 
 function getCardsInfo(cards) {
-  cards.forEach(async (card, i) => {
+  cards.forEach(async card => {
     const { data: cardInfo } = await api.get(card.content_url, {
       headers: runtimeHeaders,
     })
