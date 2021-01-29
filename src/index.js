@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const yargs = require('yargs')
 const { hideBin } = require('yargs/helpers')
-const api = require('./services/api/index.js');
+const api = require('./services/api/index.js')
 
 const { organizationName, projectNumber, token, label, column } = yargs(
   hideBin(process.argv)
