@@ -68,22 +68,6 @@ function sortCardsByIssueNumber(cardsInfo) {
   })
 }
 
-function renderCards(cardsInfo) {
-  let cards = filterCards(cardsInfo)
-
-  if (isSorted) {
-    cards = sortCardsByIssueNumber(cards)
-  }
-
-  cards.forEach(card => {
-    renderCard(card)
-  })
-}
-
-function renderCard({ number, title }) {
-  console.log(`#${number} ${title}`)
-}
-
 function filterCards(cards) {
   return cards.filter(card => {
     let preserveCard = true
@@ -99,9 +83,25 @@ function filterCards(cards) {
   })
 }
 
+function renderCard({ number, title }) {
+  console.log(`#${number} ${title}`)
+}
+
+function renderCards(cardsInfo) {
+  let cards = filterCards(cardsInfo)
+
+  if (isSorted) {
+    cards = sortCardsByIssueNumber(cards)
+  }
+
+  cards.forEach(card => {
+    renderCard(card)
+  })
+}
+
 function getCardsInfo(cards) {
   return Promise.all(
-    cards.map(async (card, i) => {
+    cards.map(async card => {
       const { data: cardInfo } = await api.get(card.content_url, {
         headers: runtimeHeaders,
       })
