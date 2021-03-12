@@ -70,16 +70,17 @@ function sortCardsByIssueNumber(cardsInfo) {
 
 function filterCards(cards) {
   return cards.filter(card => {
-    let preserveCard = true
+    let shouldPreserveCard = true
     if (repository) {
-      preserveCard = card.repository.toLowerCase() === repository.toLowerCase()
+      shouldPreserveCard =
+        card.repository.toLowerCase() === repository.toLowerCase()
     }
     if (label) {
-      preserveCard = card.labels.some(
+      shouldPreserveCard = card.labels.some(
         e => e.name.toLowerCase() === label.toLowerCase()
       )
     }
-    return preserveCard
+    return shouldPreserveCard
   })
 }
 
