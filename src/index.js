@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const yargs = require('yargs')
 const { hideBin } = require('yargs/helpers')
-const api = require('./services/api/index.js')
+const GithubApi = require('./services/api/index.js')
 
 const {
   organizationName,
@@ -52,9 +52,7 @@ const {
     description: 'Filter cards by the associated repository.',
   }).argv
 
-const runtimeHeaders = {
-  Authorization: `token ${token}`,
-}
+const Api = new GithubApi(token)
 
 function sortCardsByIssueNumber(cardsInfo) {
   return cardsInfo.sort((a, b) => {
@@ -103,15 +101,11 @@ function renderCards(cardsInfo) {
 function getCardsInfo(cards) {
   return Promise.all(
     cards.map(async card => {
-      const { data: cardInfo } = await api.get(card.content_url, {
-        headers: runtimeHeaders,
-      })
+      const cardInfo = await Api.getCardInfo(card.content_url)
+      const { name: repoName } = await Api.getCardRepositoryInfo(
+        cardInfo.repository_url
+      )
 
-      const {
-        data: { name: repoName },
-      } = await api.get(cardInfo.repository_url, {
-        headers: runtimeHeaders,
-      })
       return {
         number: cardInfo.number,
         title: cardInfo.title,
@@ -123,44 +117,23 @@ function getCardsInfo(cards) {
 }
 
 async function loadReleaseNotes() {
-  const { data: orgProjects } = await api.get(
-    `https://api.github.com/orgs/${organizationName}/projects`,
-    {
-      headers: runtimeHeaders,
+  const orgProjects = await Api.getOrganizationProjects(organizationName)
+  if (orgProjects) {
+    const filteredProject = orgProjects.find(p => p.number === projectNumber)
+    if (filteredProject) {
+      const columns = await Api.getProjectColumns(filteredProject.id)
+      if (columns) {
+        const filteredColumn = columns.find(col => col.name === column)
+        if (filteredColumn) {
+          const { cards_url: cardsUrl } = filteredColumn
+          const cards = await Api.getColumnCards(cardsUrl)
+          getCardsInfo(cards).then(cardsInfo => {
+            renderCards(cardsInfo)
+          })
+        }
+      }
     }
-  )
-  if (!orgProjects) {
-    return
   }
-
-  const filteredProject = orgProjects.find(p => p.number === projectNumber)
-  if (!filteredProject) {
-    return
-  }
-
-  const { data: columns } = await api.get(
-    `https://api.github.com/projects/${filteredProject.id}/columns`,
-    {
-      headers: runtimeHeaders,
-    }
-  )
-  if (!columns) {
-    return
-  }
-
-  const filteredColumn = columns.find(col => col.name === column)
-  if (!filteredColumn) {
-    return
-  }
-
-  const { cards_url: cardsUrl } = filteredColumn
-  const { data: cards } = await api.get(`${cardsUrl}?per_page=100`, {
-    headers: runtimeHeaders,
-  })
-
-  getCardsInfo(cards).then(cardsInfo => {
-    renderCards(cardsInfo)
-  })
 }
 
 loadReleaseNotes()
