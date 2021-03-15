@@ -52,7 +52,7 @@ const {
     description: 'Filter cards by the associated repository.',
   }).argv
 
-const Api = new GithubApi(token)
+const api = new GithubApi(token)
 
 function sortCardsByIssueNumber(cardsInfo) {
   return cardsInfo.sort((a, b) => {
@@ -101,8 +101,8 @@ function renderCards(cardsInfo) {
 function getCardsInfo(cards) {
   return Promise.all(
     cards.map(async card => {
-      const cardInfo = await Api.getCardInfo(card.content_url)
-      const { name: repoName } = await Api.getCardRepositoryInfo(
+      const cardInfo = await api.getCardInfo(card.content_url)
+      const { name: repoName } = await api.getCardRepositoryInfo(
         cardInfo.repository_url
       )
 
@@ -117,19 +117,18 @@ function getCardsInfo(cards) {
 }
 
 async function loadReleaseNotes() {
-  const orgProjects = await Api.getOrganizationProjects(organizationName)
+  const orgProjects = await api.getOrganizationProjects(organizationName)
   if (orgProjects) {
     const filteredProject = orgProjects.find(p => p.number === projectNumber)
     if (filteredProject) {
-      const columns = await Api.getProjectColumns(filteredProject.id)
+      const columns = await api.getProjectColumns(filteredProject.id)
       if (columns) {
         const filteredColumn = columns.find(col => col.name === column)
         if (filteredColumn) {
           const { cards_url: cardsUrl } = filteredColumn
-          const cards = await Api.getColumnCards(cardsUrl)
-          getCardsInfo(cards).then(cardsInfo => {
-            renderCards(cardsInfo)
-          })
+          const cards = await api.getColumnCards(cardsUrl)
+          const cardsInfo = await getCardsInfo(cards)
+          renderCards(cardsInfo)
         }
       }
     }
