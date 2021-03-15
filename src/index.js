@@ -1,11 +1,17 @@
 #!/usr/bin/env node
 const yargs = require('yargs')
 const { hideBin } = require('yargs/helpers')
-const api = require('./services/api/index.js')
+const GithubApi = require('./services/api/index.js')
 
-const { organizationName, projectNumber, token, label, column } = yargs(
-  hideBin(process.argv)
-)
+const {
+  organizationName,
+  projectNumber,
+  token,
+  label,
+  column,
+  isSorted,
+  repository,
+} = yargs(hideBin(process.argv))
   .option('organizationName', {
     alias: 'o',
     type: 'string',
@@ -29,67 +35,104 @@ const { organizationName, projectNumber, token, label, column } = yargs(
     type: 'string',
     description: 'Define label to filter cards',
   })
+  .option('isSorted', {
+    alias: 's',
+    type: 'boolean',
+    description: 'Sort by issue number.',
+  })
   .option('column', {
     alias: 'c',
     type: 'string',
     description: 'Column name from where cards will be taken.',
+    demandOption: 'Please provide a valid Github project Column.',
+  })
+  .option('repository', {
+    alias: 'r',
+    type: 'string',
+    description: 'Filter cards by the associated repository.',
   }).argv
 
-const runtimeHeaders = {
-  Authorization: `token ${token}`,
+const api = new GithubApi(token)
+
+function sortCardsByIssueNumber(cardsInfo) {
+  return cardsInfo.sort((a, b) => {
+    if (a.number > b.number) {
+      return 1
+    }
+    if (a.number < b.number) {
+      return -1
+    }
+    return 0
+  })
+}
+
+function filterCards(cards) {
+  return cards.filter(card => {
+    let shouldPreserveCard = true
+    if (repository) {
+      shouldPreserveCard =
+        card.repository.toLowerCase() === repository.toLowerCase()
+    }
+    if (label) {
+      shouldPreserveCard = card.labels.some(
+        e => e.name.toLowerCase() === label.toLowerCase()
+      )
+    }
+    return shouldPreserveCard
+  })
 }
 
 function renderCard({ number, title }) {
   console.log(`#${number} ${title}`)
 }
 
-function getCardsInfo(cards) {
-  cards.forEach(async card => {
-    const { data: cardInfo } = await api.get(card.content_url, {
-      headers: runtimeHeaders,
-    })
+function renderCards(cardsInfo) {
+  let cards = filterCards(cardsInfo)
 
-    if (!label) {
-      renderCard({ number: cardInfo.number, title: cardInfo.title })
-      return
-    }
+  if (isSorted) {
+    cards = sortCardsByIssueNumber(cards)
+  }
 
-    const hasLabel = cardInfo.labels.some(
-      e => e.name.toLowerCase() === label.toLowerCase()
-    )
-
-    if (hasLabel) {
-      renderCard({ number: cardInfo.number, title: cardInfo.title })
-    }
+  cards.forEach(card => {
+    renderCard(card)
   })
 }
 
+function getCardsInfo(cards) {
+  return Promise.all(
+    cards.map(async card => {
+      const cardInfo = await api.getCardInfo(card.content_url)
+      const { name: repoName } = await api.getCardRepositoryInfo(
+        cardInfo.repository_url
+      )
+
+      return {
+        number: cardInfo.number,
+        title: cardInfo.title,
+        labels: cardInfo.labels,
+        repository: repoName,
+      }
+    })
+  )
+}
+
 async function loadReleaseNotes() {
-  const { data: orgProjects } = await api.get(
-    `https://api.github.com/orgs/${organizationName}/projects`,
-    {
-      headers: runtimeHeaders,
+  const orgProjects = await api.getOrganizationProjects(organizationName)
+  if (orgProjects) {
+    const filteredProject = orgProjects.find(p => p.number === projectNumber)
+    if (filteredProject) {
+      const columns = await api.getProjectColumns(filteredProject.id)
+      if (columns) {
+        const filteredColumn = columns.find(col => col.name === column)
+        if (filteredColumn) {
+          const { cards_url: cardsUrl } = filteredColumn
+          const cards = await api.getColumnCards(cardsUrl)
+          const cardsInfo = await getCardsInfo(cards)
+          renderCards(cardsInfo)
+        }
+      }
     }
-  )
-
-  const filteredProject = orgProjects.find(p => p.number === projectNumber)
-
-  const { data: columns } = await api.get(
-    `https://api.github.com/projects/${filteredProject.id}/columns`,
-    {
-      headers: runtimeHeaders,
-    }
-  )
-
-  const filteredColumn = columns.find(col => col.name === column)
-
-  const { cards_url: cardsUrl } = column ? filteredColumn : columns[0]
-
-  const { data: cards } = await api.get(`${cardsUrl}?per_page=100`, {
-    headers: runtimeHeaders,
-  })
-
-  getCardsInfo(cards)
+  }
 }
 
 loadReleaseNotes()
