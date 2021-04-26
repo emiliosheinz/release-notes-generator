@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const yargs = require('yargs')
 const { hideBin } = require('yargs/helpers')
+const { cardFactory } = require('./factories/card.js')
 const GithubApi = require('./services/api/index.js')
 
 const {
@@ -106,19 +107,6 @@ function renderCards(cardsInfo) {
   cards.forEach(card => {
     renderCard(card)
   })
-}
-
-function cardFactory(object) {
-  if (!object) {
-    return null
-  }
-
-  return {
-    number: object.number,
-    title: object.title,
-    labels: object.labels,
-    milestone: object.milestone?.title || '',
-  }
 }
 
 function getCardsInfo(cards) {
