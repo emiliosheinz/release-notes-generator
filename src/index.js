@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const yargs = require('yargs')
 const { hideBin } = require('yargs/helpers')
-const { cardFactory } = require('./factories/card.js')
+const { cardFactory } = require('./factories')
 const GithubApi = require('./services/api/index.js')
 
 const {

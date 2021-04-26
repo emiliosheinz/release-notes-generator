@@ -1,0 +1,1 @@
+export { cardFactory } from './card'
