@@ -146,9 +146,10 @@ async function loadReleaseNotes() {
 
   if (filteredColumn) {
     const { cards_url: cardsUrl } = filteredColumn
-    const cards = await api.getColumnCards(cardsUrl)
-    const cardsInfo = await getCardsInfo(cards)
-    renderCards(cardsInfo)
+    const columnCards = await api.getColumnCards(cardsUrl)
+    const cards = await getCardsInfo(columnCards)
+
+    renderCards(cards)
   }
 }
 
