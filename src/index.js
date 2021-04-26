@@ -55,31 +55,27 @@ const {
 const api = new GithubApi(token)
 
 function sortCardsByIssueNumber(cardsInfo) {
-  return cardsInfo.sort((a, b) => {
-    if (a.number > b.number) {
-      return 1
-    }
-    if (a.number < b.number) {
-      return -1
-    }
-    return 0
-  })
+  return cardsInfo.sort((a, b) => parseFloat(a.number) - parseFloat(b.number))
+}
+
+function filterByRepository(card) {
+  if (repository) {
+    return card.repository.toLowerCase() === repository.toLowerCase()
+  }
+
+  return true
+}
+
+function filterByLabel(card) {
+  if (label) {
+    return card.labels.some(e => e.name.toLowerCase() === label.toLowerCase())
+  }
+
+  return true
 }
 
 function filterCards(cards) {
-  return cards.filter(card => {
-    let shouldPreserveCard = true
-    if (repository) {
-      shouldPreserveCard =
-        card.repository.toLowerCase() === repository.toLowerCase()
-    }
-    if (label) {
-      shouldPreserveCard = card.labels.some(
-        e => e.name.toLowerCase() === label.toLowerCase()
-      )
-    }
-    return shouldPreserveCard
-  })
+  return cards.filter(filterByRepository).filter(filterByLabel)
 }
 
 function renderCard({ number, title }) {
