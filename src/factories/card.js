@@ -1,4 +1,4 @@
-export function cardFactory(object) {
+function cardFactory(object) {
   if (!object) {
     return null
   }
@@ -10,3 +10,5 @@ export function cardFactory(object) {
     milestone: object.milestone?.title || '',
   }
 }
+
+module.exports = cardFactory

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 const yargs = require('yargs')
 const { hideBin } = require('yargs/helpers')
-const { cardFactory } = require('./factories')
+const cardFactory = require('./factories')
 const GithubApi = require('./services/api/index.js')
+const { byRepository, byLabel, byMilestone } = require('./utils')
 
 const {
   organizationName,
@@ -65,32 +66,11 @@ function sortCardsByIssueNumber(cardsInfo) {
   return cardsInfo.sort((a, b) => parseFloat(a.number) - parseFloat(b.number))
 }
 
-function byRepository(card) {
-  if (repository) {
-    return card.repository.toLowerCase() === repository.toLowerCase()
-  }
-
-  return true
-}
-
-function byLabel(card) {
-  if (label) {
-    return card.labels.some(e => e.name.toLowerCase() === label.toLowerCase())
-  }
-
-  return true
-}
-
-function byMilestone(card) {
-  if (milestone) {
-    return card.milestone === milestone
-  }
-
-  return true
-}
-
 function filterCards(cards) {
-  return cards.filter(byRepository).filter(byLabel).filter(byMilestone)
+  return cards
+    ?.filter(card => byRepository(card, repository))
+    .filter(card => byLabel(card, label))
+    .filter(card => byMilestone(card, milestone))
 }
 
 function renderCard({ number, title }) {

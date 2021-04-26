@@ -1,1 +1,3 @@
-export { cardFactory } from './card'
+const cardFactory = require('./card')
+
+module.exports = cardFactory
