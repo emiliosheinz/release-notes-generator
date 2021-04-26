@@ -11,6 +11,7 @@ const {
   column,
   isSorted,
   repository,
+  milestone,
 } = yargs(hideBin(process.argv))
   .option('organizationName', {
     alias: 'o',
@@ -50,6 +51,11 @@ const {
     alias: 'r',
     type: 'string',
     description: 'Filter cards by the associated repository.',
+  })
+  .option('milestone', {
+    alias: 'm',
+    type: 'string',
+    description: 'Define a milestone to filter cards.',
   }).argv
 
 const api = new GithubApi(token)
@@ -58,7 +64,7 @@ function sortCardsByIssueNumber(cardsInfo) {
   return cardsInfo.sort((a, b) => parseFloat(a.number) - parseFloat(b.number))
 }
 
-function filterByRepository(card) {
+function byRepository(card) {
   if (repository) {
     return card.repository.toLowerCase() === repository.toLowerCase()
   }
@@ -66,7 +72,7 @@ function filterByRepository(card) {
   return true
 }
 
-function filterByLabel(card) {
+function byLabel(card) {
   if (label) {
     return card.labels.some(e => e.name.toLowerCase() === label.toLowerCase())
   }
@@ -74,8 +80,16 @@ function filterByLabel(card) {
   return true
 }
 
+function byMilestone(card) {
+  if (milestone) {
+    return card.milestone === milestone
+  }
+
+  return true
+}
+
 function filterCards(cards) {
-  return cards.filter(filterByRepository).filter(filterByLabel)
+  return cards.filter(byRepository).filter(byLabel).filter(byMilestone)
 }
 
 function renderCard({ number, title }) {
@@ -94,6 +108,19 @@ function renderCards(cardsInfo) {
   })
 }
 
+function cardFactory(object) {
+  if (!object) {
+    return null
+  }
+
+  return {
+    number: object.number,
+    title: object.title,
+    labels: object.labels,
+    milestone: object.milestone?.title || '',
+  }
+}
+
 function getCardsInfo(cards) {
   return Promise.all(
     cards.map(async card => {
@@ -103,9 +130,7 @@ function getCardsInfo(cards) {
       )
 
       return {
-        number: cardInfo.number,
-        title: cardInfo.title,
-        labels: cardInfo.labels,
+        ...cardFactory(cardInfo),
         repository: repoName,
       }
     })
@@ -114,20 +139,16 @@ function getCardsInfo(cards) {
 
 async function loadReleaseNotes() {
   const orgProjects = await api.getOrganizationProjects(organizationName)
-  if (orgProjects) {
-    const filteredProject = orgProjects.find(p => p.number === projectNumber)
-    if (filteredProject) {
-      const columns = await api.getProjectColumns(filteredProject.id)
-      if (columns) {
-        const filteredColumn = columns.find(col => col.name === column)
-        if (filteredColumn) {
-          const { cards_url: cardsUrl } = filteredColumn
-          const cards = await api.getColumnCards(cardsUrl)
-          const cardsInfo = await getCardsInfo(cards)
-          renderCards(cardsInfo)
-        }
-      }
-    }
+  const filteredProject = orgProjects?.find(p => p.number === projectNumber)
+  const columns = await api.getProjectColumns(filteredProject?.id)
+
+  const filteredColumn = columns?.find(col => col.name === column)
+
+  if (filteredColumn) {
+    const { cards_url: cardsUrl } = filteredColumn
+    const cards = await api.getColumnCards(cardsUrl)
+    const cardsInfo = await getCardsInfo(cards)
+    renderCards(cardsInfo)
   }
 }
 
