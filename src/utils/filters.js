@@ -1,3 +1,5 @@
+const CONSTANTS = require('./constants')
+
 function byRepository(card, repository) {
   if (repository) {
     return card.repository.toLowerCase() === repository.toLowerCase()
@@ -15,6 +17,10 @@ function byLabel(card, label) {
 }
 
 function byMilestone(card, milestone) {
+  if (milestone === CONSTANTS.NONE) {
+    return !card.milestone
+  }
+
   if (milestone) {
     return card.milestone === milestone
   }

@@ -32,4 +32,4 @@ Run `rng --help` to see all available parameters.
 - `-c, --column`: Pass the name of the colon that you want to use to generate the data. This is required.
 - `-r, --repository`: Pass the name of the repository that you want to filter cards.
 - `-s, --sort`: Use to asc sort by card issue number.
-- `-m, --milestone`: Pass any valid milestone if you want to filter your return with one. The default value is null
+- `-m, --milestone`: Pass any valid milestone if you want to filter your return with one. The default value is null, when null return all cards. If you only want to return cards that do not have a milestone, send `__NONE__` as parameter.
