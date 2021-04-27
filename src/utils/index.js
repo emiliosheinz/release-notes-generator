@@ -1,3 +1,3 @@
-const { byRepository, byMilestone, byLabel } = require('./filters')
+const filters = require('./filters')
 
-module.exports = { byLabel, byMilestone, byRepository }
+module.exports = { filters }
