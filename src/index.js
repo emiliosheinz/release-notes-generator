@@ -3,7 +3,7 @@ const yargs = require('yargs')
 const { hideBin } = require('yargs/helpers')
 const cardFactory = require('./factories')
 const GithubApi = require('./services/api/index.js')
-const { byRepository, byLabel, byMilestone } = require('./utils')
+const { filters } = require('./utils')
 
 const {
   organizationName,
@@ -68,9 +68,9 @@ function sortCardsByIssueNumber(cardsInfo) {
 
 function filterCards(cards) {
   return cards
-    ?.filter(card => byRepository(card, repository))
-    .filter(card => byLabel(card, label))
-    .filter(card => byMilestone(card, milestone))
+    ?.filter(card => filters.byRepository(card, repository))
+    .filter(card => filters.byLabel(card, label))
+    .filter(card => filters.byMilestone(card, milestone))
 }
 
 function renderCard({ number, title }) {
