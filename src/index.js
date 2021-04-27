@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 const yargs = require('yargs')
 const { hideBin } = require('yargs/helpers')
+const { cardFactory } = require('./factories')
 const GithubApi = require('./services/api/index.js')
+const { filters } = require('./utils')
 
 const {
   organizationName,
@@ -11,6 +13,7 @@ const {
   column,
   isSorted,
   repository,
+  milestone,
 } = yargs(hideBin(process.argv))
   .option('organizationName', {
     alias: 'o',
@@ -50,6 +53,11 @@ const {
     alias: 'r',
     type: 'string',
     description: 'Filter cards by the associated repository.',
+  })
+  .option('milestone', {
+    alias: 'm',
+    type: 'string',
+    description: 'Define a milestone to filter cards.',
   }).argv
 
 const api = new GithubApi(token)
@@ -58,24 +66,11 @@ function sortCardsByIssueNumber(cardsInfo) {
   return cardsInfo.sort((a, b) => parseFloat(a.number) - parseFloat(b.number))
 }
 
-function filterByRepository(card) {
-  if (repository) {
-    return card.repository.toLowerCase() === repository.toLowerCase()
-  }
-
-  return true
-}
-
-function filterByLabel(card) {
-  if (label) {
-    return card.labels.some(e => e.name.toLowerCase() === label.toLowerCase())
-  }
-
-  return true
-}
-
 function filterCards(cards) {
-  return cards.filter(filterByRepository).filter(filterByLabel)
+  return cards
+    ?.filter(card => filters.byRepository(card, repository))
+    .filter(card => filters.byLabel(card, label))
+    .filter(card => filters.byMilestone(card, milestone))
 }
 
 function renderCard({ number, title }) {
@@ -103,9 +98,7 @@ function getCardsInfo(cards) {
       )
 
       return {
-        number: cardInfo.number,
-        title: cardInfo.title,
-        labels: cardInfo.labels,
+        ...cardFactory(cardInfo),
         repository: repoName,
       }
     })
@@ -114,20 +107,17 @@ function getCardsInfo(cards) {
 
 async function loadReleaseNotes() {
   const orgProjects = await api.getOrganizationProjects(organizationName)
-  if (orgProjects) {
-    const filteredProject = orgProjects.find(p => p.number === projectNumber)
-    if (filteredProject) {
-      const columns = await api.getProjectColumns(filteredProject.id)
-      if (columns) {
-        const filteredColumn = columns.find(col => col.name === column)
-        if (filteredColumn) {
-          const { cards_url: cardsUrl } = filteredColumn
-          const cards = await api.getColumnCards(cardsUrl)
-          const cardsInfo = await getCardsInfo(cards)
-          renderCards(cardsInfo)
-        }
-      }
-    }
+  const filteredProject = orgProjects?.find(p => p.number === projectNumber)
+  const columns = await api.getProjectColumns(filteredProject?.id)
+
+  const filteredColumn = columns?.find(col => col.name === column)
+
+  if (filteredColumn) {
+    const { cards_url: cardsUrl } = filteredColumn
+    const columnCards = await api.getColumnCards(cardsUrl)
+    const cards = await getCardsInfo(columnCards)
+
+    renderCards(cards)
   }
 }
 
