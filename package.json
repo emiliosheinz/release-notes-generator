@@ -1,6 +1,6 @@
 {
   "name": "rng-cli",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A release notes generator to help you in your daily work",
   "main": "src/index.js",
   "bin": {
