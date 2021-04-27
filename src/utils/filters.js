@@ -1,4 +1,4 @@
-const CONSTANTS = require('./constants')
+const CONSTANTS = require('../constants')
 
 function byRepository(card, repository) {
   if (repository) {
